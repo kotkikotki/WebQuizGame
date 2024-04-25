@@ -56,7 +56,7 @@ QList<T> FromJSONArray(const QJsonArray &jsonArray)
 
 struct Answer : public JSONable, public Updatable
 {
-    qint8 id; //0-4
+    qint64 id; //qint8
     QString answerText;
     bool isTrue;
 
@@ -97,9 +97,9 @@ struct Answer : public JSONable, public Updatable
     }
 
 private:
-    static qint8 NextId()
+    static qint64 NextId()
     {
-        static qint8 lastId = 1;
+        static auto lastId = qint64{1};
         return lastId++;
     }
 };
@@ -121,7 +121,7 @@ struct AnswerFactory : public FactoryFromJSON<Answer>
 
 struct Category : public JSONable, public Updatable
 {
-    qint8 id;
+    qint64 id; //qint8
     QString categoryText;
     QUrl iconUrl;
 
@@ -162,9 +162,9 @@ struct Category : public JSONable, public Updatable
     }
 
 private:
-    static qint8 NextId()
+    static qint64 NextId()
     {
-        static qint8 lastId = 1;
+        static auto lastId = qint64{1};
         return lastId++;
     }
 };
@@ -250,7 +250,7 @@ struct Question : public JSONable, public Updatable
 private:
     static qint64 NextId()
     {
-        static qint64 lastId = 1;
+        static auto lastId = qint64{1};
         return lastId++;
     }
 };
@@ -283,9 +283,11 @@ struct QuestionFactory : public FactoryFromJSON<Question>
 //
 struct SessionEntry : public JSONable
 {
+    qint64 id;
     std::optional<QUuid> token;
 
-    explicit SessionEntry()
+    explicit SessionEntry() :
+        id(NextId())
     {}
 
     void StartSession()
@@ -302,6 +304,7 @@ struct SessionEntry : public JSONable
     {
         return token    ? QJsonObject
         {
+            {"id", id},
             {"token", token->toString(QUuid::StringFormat::WithoutBraces)}
         }
                         : QJsonObject{};
@@ -317,6 +320,12 @@ private:
     QUuid GenerateToken()
     {
         return QUuid::createUuid();
+    }
+
+    static qint64 NextId()
+    {
+        static auto lastId = qint64{1};
+        return lastId++;
     }
 };
 
@@ -336,6 +345,63 @@ class IdMap : public QMap<K, T>
             }
         }
     }
+};
+
+template<typename T>
+class PaginatedData : public JSONable
+{
+public:
+
+    static constexpr qsizetype DEFAULT_PAGE = 1;
+    static constexpr qsizetype DEFAULT_PAGE_SIZE = 8;
+
+    explicit PaginatedData(const T &container, qsizetype page = DEFAULT_PAGE, qsizetype size = DEFAULT_PAGE_SIZE)
+    {
+        const auto containerSize = container.size();
+        const auto pageIndex = page - 1;
+        const auto pageSize = qMin(size, containerSize);
+        const auto totalPages = (containerSize % pageSize) == 0
+                                    ? (containerSize / pageSize)
+                                    : (containerSize / pageSize) + 1;
+
+        m_valid = containerSize > (pageIndex * pageSize);
+
+        if(!m_valid)
+        {
+            m_json = QJsonObject{};
+            return;
+        }
+
+        auto data = QJsonArray{};
+        auto iterator = container.begin();
+        std::advance(iterator, std::min(pageIndex * pageSize, containerSize)); //TODO
+        for(qsizetype i = 0; i < pageSize && iterator != container.end(); ++i, ++iterator)
+            data.push_back(iterator->ToJSON());
+
+        m_json = QJsonObject
+        {
+            {"page", pageIndex + 1},
+            {"per_page", pageSize},
+            {"total", containerSize},
+            {"total_pages", totalPages},
+            {"data", data}
+        };
+    }
+
+    QJsonObject ToJSON() const
+    {
+        return m_json;
+    }
+
+    constexpr bool IsValid() const
+    {
+        return m_valid;
+    }
+
+private:
+
+    QJsonObject m_json;
+    bool m_valid;
 };
 
 #endif // STRUCTS_HPP
