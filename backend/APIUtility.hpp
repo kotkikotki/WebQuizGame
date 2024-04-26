@@ -37,7 +37,7 @@ static std::optional<QJsonObject> ByteArrayToJSONObject(const QByteArray &array)
     return json.object();
 }
 
-template<typename K = quint64, typename T = void>
+template<typename K = qint64, typename T = void>
 static IdMap<K, T> TryLoadFromFile(const FactoryFromJSON<T> &factory, const QString &path)
 {
     const auto optionalByteArray = ReadFileToByteArray(path);

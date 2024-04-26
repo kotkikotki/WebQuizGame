@@ -9,7 +9,7 @@
 
 //TODO ASK FOR AUTH?? CHANGE AUTH??
 
-template<typename K = quint64, typename T = void, typename = enable_if_t<std::conjunction_v<std::is_base_of<JSONable, T>, std::is_base_of<Updatable, T>>>>
+template<typename K = qint64, typename T = void, typename = enable_if_t<std::conjunction_v<std::is_base_of<JSONable, T>, std::is_base_of<Updatable, T>>>>
 void AddCRUDRoutes(QHttpServer &httpServer, const QString &apiPath, CRUDAPI<K, T> &api, const SessionAPI<K> &sessionApi)
 {
     //GET paginated data list
@@ -25,7 +25,7 @@ void AddCRUDRoutes(QHttpServer &httpServer, const QString &apiPath, CRUDAPI<K, T
         (
             QString("%1").arg(apiPath), //apiPath?
             QHttpServerRequest::Method::Get,
-            [&api](qint64 itemId) {return api.GetItem<qint64(itemId);}
+            [&api](K itemId) {return api.GetItem(itemId);}
         );
 
     //POST
@@ -46,11 +46,11 @@ void AddCRUDRoutes(QHttpServer &httpServer, const QString &apiPath, CRUDAPI<K, T
         (
             QString("%1").arg(apiPath), //apiPath?
             QHttpServerRequest::Method::Put,
-            [&api, &sessionApi](quint64 itemId, const QHttpServerRequest &request)
+            [&api, &sessionApi](K itemId, const QHttpServerRequest &request)
             {
                 if(!sessionApi.Authorize(request))
                     return QHttpServerResponse(QHttpServerResponder::StatusCode::Unauthorized);
-                return api.UpdateItem(itemId, request);
+                return api.PutItem(itemId, request);
             }
         );
 
@@ -58,11 +58,11 @@ void AddCRUDRoutes(QHttpServer &httpServer, const QString &apiPath, CRUDAPI<K, T
         (
             QString("%1").arg(apiPath), //apiPath?
             QHttpServerRequest::Method::Patch,
-            [&api, &sessionApi](quint64 itemId, const QHttpServerRequest &request)
+            [&api, &sessionApi](K itemId, const QHttpServerRequest &request)
             {
                 if(!sessionApi.Authorize(request))
                     return QHttpServerResponse(QHttpServerResponder::StatusCode::Unauthorized);
-                return api.UpdateItemFields(itemId, request);
+                return api.PutItemFields(itemId, request);
             }
         );
 
@@ -71,7 +71,7 @@ void AddCRUDRoutes(QHttpServer &httpServer, const QString &apiPath, CRUDAPI<K, T
         (
             QString("%1").arg(apiPath), //apiPath?
             QHttpServerRequest::Method::Patch,
-            [&api, &sessionApi](quint64 itemId, const QHttpServerRequest &request)
+            [&api, &sessionApi](K itemId, const QHttpServerRequest &request)
             {
                 if(!sessionApi.Authorize(request))
                     return QHttpServerResponse(QHttpServerResponder::StatusCode::Unauthorized);

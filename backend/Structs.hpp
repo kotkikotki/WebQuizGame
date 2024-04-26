@@ -329,9 +329,18 @@ private:
     }
 };
 
+struct SessionEntryFactory : public FactoryFromJSON<SessionEntry>
+{
+    std::optional<SessionEntry> FromJSON(const QJsonObject &json) const override
+    {
+        return SessionEntry(); //TODO AUTH?
+    }
+};
+
 template<typename K = qint64, typename T = void>
 class IdMap : public QMap<K, T>
 {
+public:
     IdMap() = default;
     explicit IdMap(const FactoryFromJSON<T> &factory, const QJsonArray &array) : QMap<K, T>()
     {

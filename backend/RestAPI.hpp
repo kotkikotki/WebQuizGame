@@ -6,7 +6,7 @@
 
 #include"APIUtility.hpp"
 
-template<typename K = quint64, typename T = void, typename = enable_if_t<std::conjunction_v<std::is_base_of<JSONable, T>, std::is_base_of<Updatable, T>>>>
+template<typename K = qint64, typename T = void, typename = enable_if_t<std::conjunction_v<std::is_base_of<JSONable, T>, std::is_base_of<Updatable, T>>>>
 class CRUDAPI
 {
 
@@ -44,7 +44,7 @@ public:
         auto paginatedData = PaginatedDataType
         {
             m_data, optionalPage
-                ?   optionalPage.value() : PaginatedDataType::DEFALUT_PAGE,
+                ?   optionalPage.value() : PaginatedDataType::DEFAULT_PAGE,
                     optionalPerPage
                 ?   optionalPerPage.value() : PaginatedDataType::DEFAULT_PAGE_SIZE
         };
@@ -87,7 +87,7 @@ public:
             return QHttpServerResponse(QHttpServerResponder::StatusCode::AlreadyReported);
 
         const auto entry = m_data.insert(optionalItem.value().id, optionalItem.value());
-        return QHttpServerResponse(entry.value().ToJSON, QHttpServerResponder::StatusCode::Created);
+        return QHttpServerResponse(entry.value().ToJSON(), QHttpServerResponder::StatusCode::Created);
     }
 
     //UPDATE
@@ -134,7 +134,7 @@ private:
     std::unique_ptr<FactoryFromJSON<T>> m_factory;
 };
 
-template<typename K = quint64>
+template<typename K = qint64>
 class SessionAPI
 {
 public:
